@@ -4,6 +4,7 @@ import path from 'node:path';
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { FakeModel } from './fixtures/fakeModel';
+import { handleResponses } from './fixtures/fakeOpenAI';
 
 export function tempHome(prefix = 'poppet-test-'): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -11,7 +12,11 @@ export function tempHome(prefix = 'poppet-test-'): string {
 
 export async function startFakeModel(model = new FakeModel()) {
   const server = http.createServer((req, res) => {
-    model.handle(req, res, req.url ?? '/').catch((e) => {
+    const url = req.url ?? '/';
+    const handler = url.startsWith('/openai/')
+      ? handleResponses(model, req, res, url.slice('/openai'.length))
+      : model.handle(req, res, url);
+    handler.catch((e) => {
       res.writeHead(500);
       res.end(String(e));
     });

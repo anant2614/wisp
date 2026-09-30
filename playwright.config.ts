@@ -5,6 +5,11 @@ const FIXTURES = 'http://127.0.0.1:4010';
 const APP_PORT = 3100;
 const home = path.join(import.meta.dirname, '.e2e-home');
 const chrome = process.env.POPPET_CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+// Run the whole suite against either agent engine: Claude Agent SDK (default) or Codex.
+const engineEnv: Record<string, string> =
+  process.env.POPPET_E2E_PROVIDER === 'openai'
+    ? { POPPET_PROVIDER: 'openai_api', OPENAI_API_KEY: 'sk-fixture', POPPET_OPENAI_BASE_URL: `${FIXTURES}/openai/v1` }
+    : { POPPET_PROVIDER: 'anthropic_api' };
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -53,6 +58,7 @@ export default defineConfig({
         REDDIT_AUTH_URL: `${FIXTURES}/reddit/api/v1/access_token`,
         REDDIT_API_BASE: `${FIXTURES}/reddit/api`,
         MCP_REGISTRY_URL: `${FIXTURES}/registry`,
+        ...engineEnv,
       },
     },
   ],

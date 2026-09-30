@@ -9,6 +9,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import { FakeModel } from './fakeModel';
+import { handleResponses } from './fakeOpenAI';
 
 export interface Mail {
   id: string;
@@ -140,6 +141,7 @@ export class World {
       return send(res, 200, { ok: true });
     }
     if (p.startsWith('/anthropic/')) return this.model.handle(req, res, p.slice('/anthropic'.length));
+    if (p.startsWith('/openai/')) return handleResponses(this.model, req, res, p.slice('/openai'.length));
     if (p.startsWith('/google/')) return this.google(req, res, url);
     if (p.startsWith('/reddit/')) return this.reddit(req, res, url);
     if (p.startsWith('/registry/')) return this.registry(res, url);

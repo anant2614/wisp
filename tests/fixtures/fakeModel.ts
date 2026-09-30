@@ -105,6 +105,8 @@ export class FakeModel {
   scenarios: Scenario[] = [];
   /** Raw request bodies, so tests can assert what the model was (and wasn't) shown. */
   requests: string[] = [];
+  /** Auth-related headers of each main-loop request (to verify which credential was used). */
+  auth: { authorization?: string; apiKey?: string }[] = [];
   errors: string[] = [];
 
   add(...s: Scenario[]) {
@@ -112,7 +114,10 @@ export class FakeModel {
   }
 
   decide(body: any): Step {
-    const ctx = buildCtx(body);
+    return this.decideCtx(buildCtx(body));
+  }
+
+  decideCtx(ctx: ModelCtx): Step {
     const sc = this.scenarios.find((s) => s.match(ctx));
     if (!sc) return { text: `I have no script for: ${ctx.prompt.slice(0, 80)}` };
     try {
@@ -135,6 +140,11 @@ export class FakeModel {
     const body = JSON.parse(raw || '{}');
     const isMain = (body.tools ?? []).some((t: any) => String(t.name).startsWith('mcp__poppet__'));
     this.requests.push(raw);
+    if (isMain)
+      this.auth.push({
+        authorization: req.headers.authorization as string | undefined,
+        apiKey: req.headers['x-api-key'] as string | undefined,
+      });
     const step: Step = isMain ? this.decide(body) : { text: 'OK' };
     const content: any[] = [];
     if ('text' in step) content.push({ type: 'text', text: step.text });

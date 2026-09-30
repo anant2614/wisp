@@ -12,7 +12,14 @@ export function openDb(file: string): Db {
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
   sqlite.exec(schema.DDL);
+  migrate(sqlite);
   return drizzle(sqlite, { schema }) as Db;
+}
+
+/** Additive migrations for databases created by earlier versions. */
+function migrate(sqlite: Database.Database) {
+  const cols = sqlite.prepare("SELECT name FROM pragma_table_info('conversations')").all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'engine')) sqlite.exec('ALTER TABLE conversations ADD COLUMN engine TEXT');
 }
 
 export { schema };

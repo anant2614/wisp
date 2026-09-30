@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, post } from '@/lib/client';
+import { ProviderSettings } from './ProviderSettings';
 
 interface SettingsData {
   google: Record<'personal' | 'agent', { connected: boolean; email?: string }>;
@@ -101,6 +102,8 @@ export function Settings() {
           {msg}
         </div>
       )}
+
+      <ProviderSettings onMessage={setMsg} />
 
       <section className={section}>
         <h2 className="mb-2 font-semibold">Connected accounts</h2>

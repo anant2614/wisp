@@ -85,6 +85,17 @@ export class BrowserService implements BrowserProbe {
     return (r.content ?? []).map((c) => c.text ?? '').join('\n');
   }
 
+  /** Pass-through for engines that reach the browser via Poppet's MCP gateway. */
+  async listTools(): Promise<{ name: string; description?: string; inputSchema: unknown }[]> {
+    await this.ensureStarted();
+    return (await this.client!.listTools()).tools;
+  }
+
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    await this.ensureStarted();
+    return this.client!.callTool({ name, arguments: args });
+  }
+
   snapshot(): Promise<string> {
     return this.call('browser_snapshot');
   }

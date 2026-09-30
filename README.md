@@ -10,11 +10,11 @@ Requirements: Node 22, Docker (for agent-written tools), Google Chrome.
 
 ```bash
 npm install
-cp .env.example .env.local   # add your Anthropic, Google and Reddit credentials
+cp .env.example .env.local   # add Google and Reddit credentials (model: see below)
 npm run dev                  # http://localhost:3000 (bound to 127.0.0.1 only)
 ```
 
-Then open **Settings** and connect:
+Then open **Settings**. First choose a **model provider** (below), then connect:
 
 - **Google (personal)**: your own account. Poppet can read and search it and write drafts; sending needs your approval.
 - **Google (agent inbox)**: a separate Gmail account that Poppet uses for sign-ups and verification emails.
@@ -22,6 +22,26 @@ Then open **Settings** and connect:
 In the Google Cloud console, create an OAuth client of type _Web application_ with the redirect URI `http://localhost:3000/api/oauth/google/callback`. Enable the Gmail API and the Drive API, and add both accounts as test users.
 
 For Reddit, create a read-only _script_ app and set `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET`. Review Reddit's Data API terms before using it for commercial lead generation.
+
+## Model providers
+
+Poppet can run on your existing subscriptions or on API keys. Choose one in **Settings → Model provider**; the composer's model list follows the choice.
+
+| Provider                            | How it signs in                                                                                                                    | Engine           |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| **Claude subscription** (Pro/Max)   | The Claude Code login already on this machine (`claude login`), or a long-lived token from `claude setup-token` pasted in Settings | Claude Agent SDK |
+| **Anthropic API key**               | `ANTHROPIC_API_KEY` or a key pasted in Settings                                                                                    | Claude Agent SDK |
+| **ChatGPT subscription** (Plus/Pro) | **Sign in with ChatGPT** in Settings runs `codex login` (Poppet keeps its own Codex home), or imports an existing `~/.codex` login | OpenAI Codex SDK |
+| **OpenAI API key**                  | `OPENAI_API_KEY` or a key pasted in Settings                                                                                       | OpenAI Codex SDK |
+
+Both engines see the same tools and go through the same approval gate, redaction and handoffs (`src/server/agent/pipeline.ts`).
+
+- **Claude engine:** tools attach directly through Agent SDK hooks.
+- **Codex engine:** tools reach Codex through a local, per-turn, token-authenticated MCP gateway (`src/server/agent/mcpGateway.ts`). Codex's own shell, code-mode, web, apps, plugins and sub-agents are switched off. It runs with a read-only sandbox, no network, and approvals set to "never", so it can act only through Poppet's gated tools.
+
+If you switch providers mid-conversation, the next turn starts a new session on the other engine and carries the conversation over as context. Subscription usage is tracked in tokens with no dollar cost.
+
+Subscriptions are meant for your own personal use of your own account. Before offering this to other people (the v2 platform), check Anthropic's and OpenAI's terms: third-party products generally may not offer claude.ai or ChatGPT sign-in without approval, so v2 should expect to use API keys.
 
 ## What's inside
 
@@ -31,7 +51,11 @@ src/
   components/               Chat timeline, approval / handoff / sign-in cards, artifacts, settings
   proxy.ts                  Host allowlist (blocks DNS rebinding)
   server/
-    agent/session.ts        Session manager: one Agent SDK query() per turn, resumes the SDK session
+    agent/session.ts        Session manager: picks the engine for the selected provider, resumes its session
+    agent/engines/          Claude Agent SDK engine and OpenAI Codex SDK engine
+    agent/pipeline.ts       Per-tool-call pipeline shared by both engines (gate, redaction, handoffs)
+    agent/mcpGateway.ts     Gated MCP server that exposes Poppet's tools to Codex
+    providers.ts            Model provider selection, credentials, ChatGPT sign-in via `codex login`
     agent/prompt.ts         System prompt (base rules + top-k memories + active skills)
     agent/toolServer.ts     In-process MCP server with the built-in tools and sandbox tools
     gate.ts                 Approval gate: deterministic allow / ask / deny for every tool call
@@ -83,15 +107,15 @@ Other safety measures:
 
 ```bash
 npm test            # unit + integration (Vitest); sandbox tests need a Docker daemon
-npm run test:e2e    # builds the app, then runs T1–T7 + safety tests with Playwright
+npm run test:e2e    # builds the app, then runs T1–T7 + safety tests on both engines (Claude, then Codex)
 ```
 
 The end-to-end suite runs the real Next.js app, Agent SDK, approval gate, Playwright MCP browser, SQLite, git registry and Docker sandbox. Only two things are replaced:
 
 - **External services:** `tests/fixtures/world.ts` serves fake Google OAuth, Gmail and Drive; the Reddit API; the MCP registry; an OAuth-protected MCP server; and websites on `*.localhost`, including a sign-up form with a fake CAPTCHA and a prompt-injection page.
-- **The model's decisions:** `tests/fixtures/fakeModel.ts` implements the Anthropic Messages API and plays scripted scenarios (`tests/fixtures/scenarios.ts`).
+- **The model's decisions:** `tests/fixtures/fakeModel.ts` (Anthropic Messages API) and `tests/fixtures/fakeOpenAI.ts` (OpenAI Responses API, for Codex) play the same scripted scenarios (`tests/fixtures/scenarios.ts`).
 
-Because of this, the e2e suite checks Poppet's machinery, not how well a real model does the tasks. Run T1–T7 by hand with a real model before relying on it; see the PRD §15 checklist.
+Because of this, the e2e suite checks Poppet's machinery, not how well a real model does the tasks. Subscription sign-in is covered up to the provider boundary: the tests check that a `claude setup-token` token is sent as the bearer credential and that ChatGPT sign-in produces OpenAI's OAuth URL, but they never complete a real login. Run T1–T7 by hand with a real model before relying on it; see the PRD §15 checklist.
 
 ## Differences from the PRD
 

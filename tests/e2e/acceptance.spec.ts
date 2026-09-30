@@ -271,3 +271,34 @@ test('Safety: requests for a foreign Host are refused (DNS rebinding)', async ()
   expect(await status('attacker.example:3100')).toBe(403);
   expect(await status('localhost:3100')).toBe(200);
 });
+
+test('Settings: choose a model provider (subscriptions or API keys)', async ({ page }) => {
+  const original = process.env.POPPET_E2E_PROVIDER === 'openai' ? 'openai_api' : 'anthropic_api';
+  await page.goto('/settings');
+  const ps = page.getByTestId('provider-settings');
+  for (const p of ['claude_subscription', 'anthropic_api', 'openai_subscription', 'openai_api'])
+    await expect(ps.getByTestId(`provider-${p}`)).toBeVisible();
+  await expect(ps.getByTestId(`provider-${original}`)).toHaveAttribute('data-selected', 'true');
+
+  // Claude subscription with a `claude setup-token` token.
+  const claude = ps.getByTestId('provider-claude_subscription');
+  await claude.getByRole('radio').check();
+  await expect(claude).toHaveAttribute('data-selected', 'true');
+  await claude.getByTestId('provider-input-set_claude_token').fill('sk-ant-oat01-e2e');
+  await claude.getByRole('button', { name: 'Save' }).click();
+  await expect(ps.getByTestId('provider-detail-claude_subscription')).toContainText('saved Claude subscription token');
+  await shot(page, 'provider-settings');
+
+  // ChatGPT subscription: the sign-in flow hands back OpenAI's OAuth URL.
+  const login = await page.request.post('/api/providers', { data: { action: 'chatgpt_login' }, headers: { 'x-poppet': '1' } });
+  expect((await login.json()).url).toMatch(/^https:\/\/auth\.openai\.com\/oauth\/authorize\?/);
+  await page.request.post('/api/providers', { data: { action: 'chatgpt_logout' }, headers: { 'x-poppet': '1' } });
+
+  // The composer offers the selected engine's models.
+  await ps.getByTestId('provider-openai_subscription').getByRole('radio').check();
+  await page.goto('/');
+  await expect(page.getByRole('combobox', { name: 'Model' })).toContainText('Codex default model');
+
+  await page.request.post('/api/providers', { data: { action: 'select', provider: original }, headers: { 'x-poppet': '1' } });
+  await page.request.post('/api/providers', { data: { action: 'set_claude_token', value: '' }, headers: { 'x-poppet': '1' } });
+});

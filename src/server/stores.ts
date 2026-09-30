@@ -3,7 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { desc, eq, sql } from 'drizzle-orm';
 import type { Db } from './db';
-import { conversations, leadRuns, leads, memories, usage } from './db/schema';
+import { conversations, leadRuns, leads, memories, settings, usage } from './db/schema';
 
 export class MemoryStore {
   constructor(private db: Db) {}
@@ -169,7 +169,7 @@ export class ConversationStore {
     return this.db.select().from(conversations).orderBy(desc(conversations.updatedAt)).all();
   }
 
-  touch(id: string, patch: { title?: string; sdkSessionId?: string | null } = {}) {
+  touch(id: string, patch: { title?: string; sdkSessionId?: string | null; engine?: string | null } = {}) {
     this.db
       .update(conversations)
       .set({ ...patch, updatedAt: Date.now() })
@@ -194,5 +194,17 @@ export class ConversationStore {
       })
       .from(usage);
     return (convId ? q.where(eq(usage.convId, convId)) : q).get()!;
+  }
+}
+
+export class SettingsStore {
+  constructor(private db: Db) {}
+
+  get(key: string): string | undefined {
+    return this.db.select().from(settings).where(eq(settings.key, key)).get()?.value;
+  }
+
+  set(key: string, value: string) {
+    this.db.insert(settings).values({ key, value }).onConflictDoUpdate({ target: settings.key, set: { value } }).run();
   }
 }

@@ -25,7 +25,8 @@ export function App() {
   const [turn, setTurn] = useState<'idle' | 'running' | 'retrying'>('idle');
   const [usage, setUsage] = useState<Usage | null>(null);
   const [input, setInput] = useState('');
-  const [model, setModel] = useState('claude-sonnet-5-5');
+  const [models, setModels] = useState<{ id: string; label: string }[]>([]);
+  const [model, setModel] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showArtifacts, setShowArtifacts] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
@@ -49,6 +50,16 @@ export function App() {
   useEffect(() => {
     if (convId) history.replaceState(null, '', `/#${convId}`);
   }, [convId]);
+
+  // Model choices depend on the selected provider (Claude or Codex models).
+  useEffect(() => {
+    api<{ models: { id: string; label: string }[] }>('/api/providers')
+      .then((r) => {
+        setModels(r.models);
+        setModel(r.models[0]?.id ?? '');
+      })
+      .catch(() => {});
+  }, []);
 
   // Live stream first, then the persisted timeline; items are upserted by id so the order of arrival doesn't matter.
   useEffect(() => {
@@ -106,7 +117,7 @@ export function App() {
     }
     setError(null);
     try {
-      await post('/api/chat', { convId: id, message: text, model });
+      await post('/api/chat', { convId: id, message: text, model: model || undefined });
       setInput('');
       setTurn('running');
       loadConvs();
@@ -225,8 +236,11 @@ export function App() {
               className="rounded-lg border border-zinc-300 bg-transparent px-2 py-2 text-xs dark:border-zinc-700"
               aria-label="Model"
             >
-              <option value="claude-sonnet-5-5">Sonnet 5.5</option>
-              <option value="claude-opus-5-5">Opus 5.5 (hard tasks)</option>
+              {models.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
             </select>
             <button
               data-testid="send"

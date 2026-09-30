@@ -52,7 +52,7 @@ Use memory_search when past preferences or outcomes might matter, and memory_sav
     );
   if (p.integrations.length)
     sections.push(
-      `## Integrations\n${p.integrations.map((i) => `- ${i.cfg.name} (${i.cfg.registryName}): ${i.connected ? 'connected — its tools are prefixed mcp__ext_' + i.cfg.name + '__' : 'installed but NOT connected — the user must sign in from Settings'}`).join('\n')}`,
+      `## Integrations\n${p.integrations.map((i) => `- ${i.cfg.name} (${i.cfg.registryName}): ${i.connected ? 'connected — its tools have names containing ext_' + i.cfg.name + '__' : 'installed but NOT connected — the user must sign in from Settings'}`).join('\n')}`,
     );
   return sections.join('\n\n');
 }

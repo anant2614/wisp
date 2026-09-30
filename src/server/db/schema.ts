@@ -4,6 +4,8 @@ export const conversations = sqliteTable('conversations', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
   sdkSessionId: text('sdk_session_id'),
+  /** Which agent engine owns sdk_session_id: 'claude' (Agent SDK session) or 'codex' (Codex thread). */
+  engine: text('engine'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
 });
@@ -106,7 +108,14 @@ export const usage = sqliteTable('usage', {
   createdAt: integer('created_at').notNull(),
 });
 
+/** Small key/value store for user settings (e.g. the selected model provider). */
+export const settings = sqliteTable('settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
+
 export const DDL = `
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS conversations (id TEXT PRIMARY KEY, title TEXT NOT NULL, sdk_session_id TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, conv_id TEXT NOT NULL, role TEXT NOT NULL, content_json TEXT NOT NULL, created_at INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS messages_conv ON messages(conv_id, created_at);

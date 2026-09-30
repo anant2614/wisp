@@ -14,7 +14,8 @@ import { RedditClient } from './integrations/reddit';
 import { McpAuthService } from './integrations/mcpAuth';
 import { Registry } from './registry';
 import { DisabledSandbox, DockerSandbox, type Sandbox } from './sandbox';
-import { ConversationStore, ExportStore, LeadStore, MemoryStore } from './stores';
+import { ConversationStore, ExportStore, LeadStore, MemoryStore, SettingsStore } from './stores';
+import { ProviderService } from './providers';
 import { ProposalService } from './proposals';
 import { SessionManager } from './agent/session';
 
@@ -38,6 +39,8 @@ export interface Services {
   exports: ExportStore;
   conversations: ConversationStore;
   proposals: ProposalService;
+  settings: SettingsStore;
+  providers: ProviderService;
   sessions: SessionManager;
 }
 
@@ -64,8 +67,11 @@ export function createServices(overrides: Partial<Pick<Services, 'secrets' | 'sa
   const proposals = new ProposalService(registry, sandbox, secrets);
   const gate = new ApprovalGate({ approvals, audit, secrets, browser, previews: proposals });
 
+  const settings = new SettingsStore(db);
   const services = {
     db,
+    settings,
+    providers: new ProviderService(settings, secrets),
     bus,
     timeline,
     audit,

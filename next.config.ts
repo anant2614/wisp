@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     '@anthropic-ai/claude-agent-sdk',
     '@modelcontextprotocol/sdk',
     '@playwright/mcp',
+    '@openai/codex-sdk',
   ],
 };
 
