@@ -1,0 +1,59 @@
+{
+  "name": "poppet",
+  "version": "1.0.0",
+  "description": "Poppet — a personal agent that browses, works in Gmail and extends itself, with approval gates.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "next build && playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anant2614/wisp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anant2614/wisp/issues"
+  },
+  "homepage": "https://github.com/anant2614/wisp#readme",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.285",
+    "@modelcontextprotocol/sdk": "^1.31.0",
+    "@playwright/mcp": "^0.0.83",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.3",
+    "marked": "^18.0.14",
+    "next": "^16.3.7",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "simple-git": "^4.0.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "msw": "^2.15.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "optionalDependencies": {
+    "keytar": "^7.9.0"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  }
+}

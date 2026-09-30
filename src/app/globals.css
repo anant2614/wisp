@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
+}
+
+.md :where(p, ul, ol, pre, table, blockquote) {
+  margin: 0.5rem 0;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.md ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.md a {
+  @apply text-blue-600 underline dark:text-blue-400;
+}
+.md code {
+  @apply rounded bg-zinc-100 px-1 text-[0.85em] dark:bg-zinc-800;
+}
+.md pre {
+  @apply overflow-x-auto rounded bg-zinc-100 p-2 text-xs dark:bg-zinc-900;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md table {
+  @apply block overflow-x-auto text-sm;
+  border-collapse: collapse;
+}
+.md th,
+.md td {
+  @apply border border-zinc-300 px-2 py-1 align-top dark:border-zinc-700;
+}
+.md h1 {
+  @apply text-lg font-semibold;
+}
+.md h2 {
+  @apply text-base font-semibold;
+}

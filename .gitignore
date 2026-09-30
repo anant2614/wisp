@@ -1,0 +1,11 @@
+node_modules/
+.next/
+workspace/
+.env*.local
+.env
+test-results/
+playwright-report/
+*.tsbuildinfo
+next-env.d.ts
+.playwright-mcp/
+.e2e-home/
