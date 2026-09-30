@@ -18,9 +18,7 @@ export interface ToolManifest {
 }
 
 export type McpAuth =
-  | { type: 'none' }
-  | { type: 'headers'; headers: { name: string; description?: string }[] }
-  | { type: 'oauth' };
+  { type: 'none' } | { type: 'headers'; headers: { name: string; description?: string }[] } | { type: 'oauth' };
 
 export interface McpConfig {
   name: string;
@@ -62,8 +60,7 @@ export function assertName(name: string) {
 
 function safeRelPath(p: string) {
   const norm = path.posix.normalize(p.replace(/\\/g, '/'));
-  if (norm.startsWith('..') || path.posix.isAbsolute(norm) || norm.includes('\0'))
-    throw new Error(`Invalid file path "${p}"`);
+  if (norm.startsWith('..') || path.posix.isAbsolute(norm) || norm.includes('\0')) throw new Error(`Invalid file path "${p}"`);
   return norm;
 }
 
@@ -90,7 +87,7 @@ export class Registry {
 
   private async init() {
     for (const d of ['skills', 'tools', 'pending/skills', 'pending/tools', 'pending/mcp'])
-      fs.mkdirSync(path.join(this.root, d), { recursive: true });
+      fs.mkdirSync(path.join(/*turbopackIgnore: true*/ this.root, d), { recursive: true });
     if (!fs.existsSync(path.join(this.root, '.git'))) {
       await this.git.init();
       await this.git.addConfig('user.name', 'Poppet');
@@ -288,30 +285,13 @@ export class Registry {
     });
   }
 
-  /** Undo the most recent commit that touched this item, restoring its previous state. */
+  /**
+   * Roll an item back to the version that was active before the current one
+   * (restoring its files from that activation's git commit), or remove it if
+   * there is no earlier version. Repeated rollbacks keep stepping back.
+   */
   async rollback(kind: RegistryKind, name: string): Promise<string> {
     return this.run(async () => {
-      const rel = kind === 'mcp' ? 'mcp.json' : path.relative(this.root, this.activeDir(kind, name));
-      const log = await this.git.log({ file: rel, maxCount: 1 });
-      const last = log.latest;
-      if (!last) throw new Error(`No history for ${kind} ${name}`);
-      if (kind === 'mcp') {
-        const prev = await this.git.show([`${last.hash}^:mcp.json`]).catch(() => '{"servers":{}}');
-        const prevCfg = JSON.parse(prev).servers?.[name];
-        const cur = this.readMcp();
-        if (prevCfg) cur.servers[name] = prevCfg;
-        else delete cur.servers[name];
-        fs.writeFileSync(this.mcpFile, JSON.stringify(cur, null, 2) + '\n');
-      } else {
-        fs.rmSync(this.activeDir(kind, name), { recursive: true, force: true });
-        const existed = await this.git
-          .raw(['ls-tree', '-r', '--name-only', `${last.hash}^`, '--', rel])
-          .catch(() => '');
-        if (existed.trim()) await this.git.raw(['checkout', `${last.hash}^`, '--', rel]);
-      }
-      await this.git.add('-A');
-      await this.git.commit(`Roll back ${kind} ${name} (undo ${last.hash.slice(0, 7)}: ${last.message})`);
-      // Mark the rolled-back version and reactivate the one before it, if any.
       const rows = this.db
         .select()
         .from(registryItems)
@@ -319,10 +299,26 @@ export class Registry {
         .orderBy(desc(registryItems.version))
         .all();
       const current = rows.find((r) => ['active', 'disabled', 'degraded'].includes(r.status));
-      if (current) this.db.update(registryItems).set({ status: 'rolled_back' }).where(eq(registryItems.id, current.id)).run();
-      const prevRow = rows.find((r) => r.status === 'superseded');
-      if (prevRow) this.db.update(registryItems).set({ status: 'active' }).where(eq(registryItems.id, prevRow.id)).run();
-      return last.hash;
+      if (!current) throw new Error(`${kind} ${name} has no active version to roll back`);
+      const prev = rows.find((r) => r.status === 'superseded' && r.version < current.version && r.gitSha);
+      const rel = kind === 'mcp' ? 'mcp.json' : path.relative(this.root, this.activeDir(kind, name));
+      if (kind === 'mcp') {
+        const cur = this.readMcp();
+        const prevCfg = prev ? JSON.parse(await this.git.show([`${prev.gitSha}:mcp.json`])).servers?.[name] : undefined;
+        if (prevCfg) cur.servers[name] = prevCfg;
+        else delete cur.servers[name];
+        fs.writeFileSync(this.mcpFile, JSON.stringify(cur, null, 2) + '\n');
+      } else {
+        fs.rmSync(this.activeDir(kind, name), { recursive: true, force: true });
+        if (prev) await this.git.raw(['checkout', prev.gitSha!, '--', rel]);
+      }
+      this.setDisabled(kind, name, false);
+      await this.git.add('-A');
+      const target = prev ? `v${prev.version}` : 'nothing';
+      const c = await this.git.commit(`Roll back ${kind} ${name} v${current.version} → ${target}`);
+      this.db.update(registryItems).set({ status: 'rolled_back' }).where(eq(registryItems.id, current.id)).run();
+      if (prev) this.db.update(registryItems).set({ status: 'active' }).where(eq(registryItems.id, prev.id)).run();
+      return c.commit;
     });
   }
 

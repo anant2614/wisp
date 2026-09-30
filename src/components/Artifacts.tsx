@@ -20,7 +20,9 @@ export function ArtifactsPanel({ items }: { items: TimelineItem[] }) {
       data-testid="artifacts-panel"
     >
       <h2 className="mb-2 text-sm font-semibold">Artifacts</h2>
-      {artifacts.length === 0 && <p className="text-xs text-zinc-500">Exports and Google Docs from this conversation appear here.</p>}
+      {artifacts.length === 0 && (
+        <p className="text-xs text-zinc-500">Exports and Google Docs from this conversation appear here.</p>
+      )}
       <ul className="space-y-2">
         {artifacts.map((a) => (
           <li key={a.id} className="rounded-md border border-zinc-200 p-2 text-sm dark:border-zinc-800" data-testid="artifact">

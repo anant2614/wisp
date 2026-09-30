@@ -51,9 +51,30 @@ export function freshState(): WorldState {
   return {
     mail: {
       personal: [
-        m('m1', 'Alice Chen <alice@work.example>', 'Can you review the Q3 deck by Friday?', 'Hi! Could you review the Q3 planning deck and send comments by Friday? Thanks, Alice', true, 3_600_000),
-        m('m2', 'Smile Dental <dentist@smile.example>', 'Please confirm your appointment on Oct 2', 'Reply YES to confirm your cleaning on Oct 2 at 9:00.', true, 7_200_000),
-        m('m3', 'Tech Digest <news@techdigest.example>', 'Your weekly digest', 'Top stories this week: ... (newsletter, no reply needed)', true, 10_800_000),
+        m(
+          'm1',
+          'Alice Chen <alice@work.example>',
+          'Can you review the Q3 deck by Friday?',
+          'Hi! Could you review the Q3 planning deck and send comments by Friday? Thanks, Alice',
+          true,
+          3_600_000,
+        ),
+        m(
+          'm2',
+          'Smile Dental <dentist@smile.example>',
+          'Please confirm your appointment on Oct 2',
+          'Reply YES to confirm your cleaning on Oct 2 at 9:00.',
+          true,
+          7_200_000,
+        ),
+        m(
+          'm3',
+          'Tech Digest <news@techdigest.example>',
+          'Your weekly digest',
+          'Top stories this week: ... (newsletter, no reply needed)',
+          true,
+          10_800_000,
+        ),
         m(
           'm4',
           'Shop <orders@shop.localhost>',
@@ -107,7 +128,8 @@ export class World {
 
     if (host.endsWith('.localhost') && host !== 'localhost') return this.site(host.replace(/\.localhost$/, ''), req, res, url);
     if (p === '/__test/health') return send(res, 200, { ok: true });
-    if (p === '/__test/state') return send(res, 200, { ...this.state, modelErrors: this.model.errors, modelRequests: this.model.requests.length });
+    if (p === '/__test/state')
+      return send(res, 200, { ...this.state, modelErrors: this.model.errors, modelRequests: this.model.requests.length });
     if (p === '/__test/model-requests') return send(res, 200, { requests: this.model.requests });
     if (p === '/__test/reset') {
       this.reset();
@@ -174,7 +196,8 @@ export class World {
           );
         }
         if (p === '/captcha-status') return send(res, 200, { solved: this.state.captchaSolved });
-        if (p === '/check-email') return send(res, 200, page('Check your email', '<h1>Check your email</h1><p>We sent you a confirmation link.</p>'));
+        if (p === '/check-email')
+          return send(res, 200, page('Check your email', '<h1>Check your email</h1><p>We sent you a confirmation link.</p>'));
         if (p === '/verify') {
           const a = this.state.signupAccounts.find((x) => x.token === url.searchParams.get('token'));
           if (!a) return send(res, 400, page('Invalid', '<h1>Invalid link</h1>'));
@@ -201,7 +224,10 @@ export class World {
           return send(
             res,
             200,
-            page('Order #12345', '<h1>Order #12345</h1><p>Item: Ergonomic chair</p><p>Status: Shipped</p><p>Carrier: UPS — arriving Oct 3</p>'),
+            page(
+              'Order #12345',
+              '<h1>Order #12345</h1><p>Item: Ergonomic chair</p><p>Status: Shipped</p><p>Carrier: UPS — arriving Oct 3</p>',
+            ),
           );
         return send(res, 200, page('Shop', '<h1>Shop</h1>'));
       case 'search': {
@@ -219,11 +245,26 @@ export class World {
         );
       }
       case 'alpha':
-        return send(res, 200, page('Alpha Notes pricing', '<h1>Alpha Notes</h1><p>Pro plan: $8/month</p><p>Offline sync, markdown export.</p>'));
+        return send(
+          res,
+          200,
+          page('Alpha Notes pricing', '<h1>Alpha Notes</h1><p>Pro plan: $8/month</p><p>Offline sync, markdown export.</p>'),
+        );
       case 'beta':
-        return send(res, 200, page('Beta Notebook plans', '<h1>Beta Notebook</h1><p>Plus plan: $5/month</p><p>Handwriting search, 10 GB storage.</p>'));
+        return send(
+          res,
+          200,
+          page(
+            'Beta Notebook plans',
+            '<h1>Beta Notebook</h1><p>Plus plan: $5/month</p><p>Handwriting search, 10 GB storage.</p>',
+          ),
+        );
       case 'gamma':
-        return send(res, 200, page('Gamma Pad pricing', '<h1>Gamma Pad</h1><p>Team plan: $12/month</p><p>Real-time collaboration.</p>'));
+        return send(
+          res,
+          200,
+          page('Gamma Pad pricing', '<h1>Gamma Pad</h1><p>Team plan: $12/month</p><p>Real-time collaboration.</p>'),
+        );
       case 'evil':
         return send(
           res,
@@ -270,9 +311,16 @@ export class World {
     if (p === '/token') {
       const f = new URLSearchParams(await readBody(req));
       const account =
-        f.get('grant_type') === 'authorization_code' ? f.get('code')?.replace('code-', '') : f.get('refresh_token')?.replace('rt-', '');
+        f.get('grant_type') === 'authorization_code'
+          ? f.get('code')?.replace('code-', '')
+          : f.get('refresh_token')?.replace('rt-', '');
       if (account !== 'personal' && account !== 'agent') return send(res, 400, { error: 'invalid_grant' });
-      return send(res, 200, { access_token: `at-${account}`, refresh_token: `rt-${account}`, expires_in: 3600, token_type: 'Bearer' });
+      return send(res, 200, {
+        access_token: `at-${account}`,
+        refresh_token: `rt-${account}`,
+        expires_in: 3600,
+        token_type: 'Bearer',
+      });
     }
     const account = this.accountFromToken(req);
     if (!account) return send(res, 401, { error: 'unauthorized' });
@@ -340,17 +388,33 @@ export class World {
 
   private async reddit(req: IncomingMessage, res: ServerResponse, url: URL) {
     const p = url.pathname.slice('/reddit'.length);
-    if (p === '/api/v1/access_token') return send(res, 200, { access_token: 'reddit-at', expires_in: 3600, token_type: 'bearer' });
+    if (p === '/api/v1/access_token')
+      return send(res, 200, { access_token: 'reddit-at', expires_in: 3600, token_type: 'bearer' });
     if (req.headers.authorization !== 'Bearer reddit-at') return send(res, 401, { error: 401 });
     this.state.redditRequests.push(url.pathname + url.search);
     const q = url.searchParams.get('q') ?? '';
     const sub = p.match(/^\/api\/r\/([^/]+)\/search$/)?.[1] ?? 'smallbusiness';
     const posts = [
-      { id: 'p1', title: 'Looking for simple invoice software for my agency', text: 'We send ~30 invoices a month and QuickBooks is overkill. Any recommendations?', author: 'agency_owner', score: 42 },
-      { id: 'p2', title: 'Alternative to QuickBooks for freelancers?', text: 'Need recurring invoices and Stripe payments.', author: 'freelance_dev', score: 17 },
+      {
+        id: 'p1',
+        title: 'Looking for simple invoice software for my agency',
+        text: 'We send ~30 invoices a month and QuickBooks is overkill. Any recommendations?',
+        author: 'agency_owner',
+        score: 42,
+      },
+      {
+        id: 'p2',
+        title: 'Alternative to QuickBooks for freelancers?',
+        text: 'Need recurring invoices and Stripe payments.',
+        author: 'freelance_dev',
+        score: 17,
+      },
       { id: 'p3', title: 'Show off your home office', text: 'Pictures of desks.', author: 'desk_fan', score: 300 },
     ];
-    const kw = q.toLowerCase().split(/\W+/).filter((w) => w.length > 3);
+    const kw = q
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((w) => w.length > 3);
     const hits = posts.filter((x) => kw.some((k) => (x.title + x.text).toLowerCase().includes(k)));
     return send(
       res,
@@ -418,7 +482,11 @@ export class World {
       });
     if (p === '/oauth/register') {
       const b = JSON.parse((await readBody(req)) || '{}');
-      return send(res, 201, { ...b, client_id: 'notion-client-' + randomUUID().slice(0, 6), client_id_issued_at: Math.floor(Date.now() / 1000) });
+      return send(res, 201, {
+        ...b,
+        client_id: 'notion-client-' + randomUUID().slice(0, 6),
+        client_id_issued_at: Math.floor(Date.now() / 1000),
+      });
     }
     if (p === '/oauth/authorize') {
       const code = 'nc-' + randomUUID().slice(0, 8);
@@ -429,11 +497,19 @@ export class World {
       const back = new URL(url.searchParams.get('redirect_uri')!);
       back.searchParams.set('code', code);
       back.searchParams.set('state', url.searchParams.get('state') ?? '');
-      return send(res, 200, page('Authorize Poppet', `<h1>Allow Poppet to access your Notion workspace?</h1><a id="allow" href="${back}">Allow access</a>`));
+      return send(
+        res,
+        200,
+        page(
+          'Authorize Poppet',
+          `<h1>Allow Poppet to access your Notion workspace?</h1><a id="allow" href="${back}">Allow access</a>`,
+        ),
+      );
     }
     if (p === '/oauth/token') {
       const f = new URLSearchParams(await readBody(req));
-      if (f.get('grant_type') === 'refresh_token') return send(res, 200, { access_token: 'notion-at', token_type: 'Bearer', expires_in: 3600, refresh_token: 'notion-rt' });
+      if (f.get('grant_type') === 'refresh_token')
+        return send(res, 200, { access_token: 'notion-at', token_type: 'Bearer', expires_in: 3600, refresh_token: 'notion-rt' });
       const c = this.state.oauthCodes[f.get('code') ?? ''];
       const verifier = f.get('code_verifier') ?? '';
       const expected = createHash('sha256').update(verifier).digest('base64url');
@@ -446,15 +522,25 @@ export class World {
 
   private async notion(req: IncomingMessage, res: ServerResponse) {
     if (req.headers.authorization !== 'Bearer notion-at')
-      return send(res, 401, { error: 'unauthorized' }, {
-        'www-authenticate': `Bearer resource_metadata="${this.origin}/.well-known/oauth-protected-resource/mcp/notion"`,
-      });
+      return send(
+        res,
+        401,
+        { error: 'unauthorized' },
+        {
+          'www-authenticate': `Bearer resource_metadata="${this.origin}/.well-known/oauth-protected-resource/mcp/notion"`,
+        },
+      );
     const server = new McpServer({ name: 'fake-notion', version: '1.0.0' });
     server.registerTool(
       'search_pages',
       { description: 'Search pages by title', inputSchema: { query: z.string() } },
       async ({ query }) => ({
-        content: [{ type: 'text', text: JSON.stringify(this.state.notionPages.filter((x) => x.title.toLowerCase().includes(query.toLowerCase()))) }],
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(this.state.notionPages.filter((x) => x.title.toLowerCase().includes(query.toLowerCase()))),
+          },
+        ],
       }),
     );
     server.registerTool(

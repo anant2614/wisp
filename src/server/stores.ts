@@ -67,7 +67,10 @@ export class LeadStore {
   saveRun(convId: string | null, product: string, queries: unknown, items: LeadInput[]) {
     const runId = randomUUID();
     const now = Date.now();
-    this.db.insert(leadRuns).values({ id: runId, convId, product, queryJson: JSON.stringify(queries), createdAt: now }).run();
+    this.db
+      .insert(leadRuns)
+      .values({ id: runId, convId, product, queryJson: JSON.stringify(queries), createdAt: now })
+      .run();
     const seen = new Set<string>();
     for (const l of items) {
       if (seen.has(l.sourceUrl)) continue;
@@ -123,9 +126,13 @@ export class ExportStore {
   }
 
   write(filename: string, content: string): { name: string; path: string } {
-    let name = path.basename(filename).replace(/[^\w.\- ]+/g, '_').trim() || 'export.md';
+    let name =
+      path
+        .basename(filename)
+        .replace(/[^\w.\- ]+/g, '_')
+        .trim() || 'export.md';
     if (!name.toLowerCase().endsWith('.md')) name += '.md';
-    const p = path.join(this.dir, name);
+    const p = path.join(/*turbopackIgnore: true*/ this.dir, name);
     fs.writeFileSync(p, content);
     return { name, path: p };
   }

@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "Poppet — a personal agent that browses, works in Gmail and extends itself, with approval gates.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 127.0.0.1",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "next build && playwright test"
+    "test:e2e": "next build && playwright test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -43,6 +45,7 @@
     "@types/react-dom": "^19.3.0",
     "msw": "^2.15.0",
     "postcss": "^8.5.28",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

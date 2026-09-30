@@ -76,7 +76,7 @@ export const builtinTools: ToolDef<any>[] = [
   }),
   defineTool({
     name: 'gmail_send',
-    description: 'Send an email from the personal account. Requires the user\'s approval.',
+    description: "Send an email from the personal account. Requires the user's approval.",
     schema: {
       to: z.string(),
       subject: z.string(),
@@ -131,10 +131,14 @@ export const builtinTools: ToolDef<any>[] = [
   defineTool({
     name: 'site_password',
     description:
-      "Get the sign-up identity for a website: the agent inbox address and a password placeholder. A strong password is generated and stored in the Keychain as site:<domain>; type the placeholder exactly as returned (browser_type / browser_fill_form substitute it on that domain only). You never see the real password.",
+      'Get the sign-up identity for a website: the agent inbox address and a password placeholder. A strong password is generated and stored in the Keychain as site:<domain>; type the placeholder exactly as returned (browser_type / browser_fill_form substitute it on that domain only). You never see the real password.',
     schema: { domain: z.string().describe('Bare domain, e.g. example.com') },
     async handler({ domain }, ctx) {
-      const d = domain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^www\./, '');
+      const d = domain
+        .toLowerCase()
+        .replace(/^https?:\/\//, '')
+        .replace(/\/.*$/, '')
+        .replace(/^www\./, '');
       const name = `site:${d}`;
       if (!(await ctx.services.secrets.get(name))) await ctx.services.secrets.set(name, generatePassword());
       const email = await ctx.services.google.email('agent');
@@ -319,7 +323,7 @@ export const builtinTools: ToolDef<any>[] = [
   }),
   defineTool({
     name: 'skill_load',
-    description: 'Load an active skill\'s full instructions (SKILL.md) and bundled files.',
+    description: "Load an active skill's full instructions (SKILL.md) and bundled files.",
     schema: { name: z.string() },
     async handler({ name }, ctx) {
       const s = await ctx.services.registry.readSkill(name);

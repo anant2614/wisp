@@ -1,9 +1,5 @@
 import { auth, type OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
-import type {
-  OAuthClientInformationMixed,
-  OAuthClientMetadata,
-  OAuthTokens,
-} from '@modelcontextprotocol/sdk/shared/auth.js';
+import type { OAuthClientInformationMixed, OAuthClientMetadata, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { getConfig } from '../config';
 import type { SecretStore } from '../secrets';
 import type { McpConfig } from '../registry';

@@ -4,13 +4,7 @@
  */
 
 export type ActionClass =
-  | 'read'
-  | 'local_write'
-  | 'consequential_web'
-  | 'outbound'
-  | 'self_modification'
-  | 'code_execution'
-  | 'forbidden';
+  'read' | 'local_write' | 'consequential_web' | 'outbound' | 'self_modification' | 'code_execution' | 'forbidden';
 
 export type PolicyDecision = 'allow' | 'ask' | 'deny' | 'classify';
 

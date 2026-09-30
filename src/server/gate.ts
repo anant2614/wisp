@@ -57,14 +57,12 @@ export class ApprovalGate {
   decide(ctx: GateContext, toolName: string, input: Record<string, unknown>): Promise<GateResult> {
     const existing = this.decided.get(ctx.toolUseId);
     if (existing) return existing;
-    const p = this.decideInner(ctx, toolName, input).catch(
-      (e): GateResult => ({
-        behavior: 'deny',
-        cls: 'forbidden',
-        reason: 'error',
-        message: `Blocked: ${String(e?.message ?? e)}`,
-      }),
-    );
+    const p = this.decideInner(ctx, toolName, input).catch((e): GateResult => ({
+      behavior: 'deny',
+      cls: 'forbidden',
+      reason: 'error',
+      message: `Blocked: ${String(e?.message ?? e)}`,
+    }));
     this.decided.set(ctx.toolUseId, p);
     // Keep the cache bounded.
     if (this.decided.size > 500) this.decided.delete(this.decided.keys().next().value!);
@@ -120,7 +118,8 @@ export class ApprovalGate {
       const title =
         custom?.title ??
         (server === BROWSER_SERVER ? browserTitle(tool, input, target) : `Allow ${tool}${server ? ` (${server})` : ''}?`);
-      const markdown = custom?.markdown ?? `**Why approval is needed:** ${reason}\n\n${genericPreview(input)}`;
+      const markdown =
+        custom?.markdown ?? `**Why approval is needed:** ${reason}\n\n${browserPreview(tool, input) ?? genericPreview(input)}`;
       const d = await this.deps.approvals.request(
         { convId: ctx.convId, toolName, title, input, previewMd: markdown },
         ctx.signal,
@@ -229,6 +228,21 @@ function safeHost(url: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function browserPreview(tool: string, input: Record<string, unknown>): string | undefined {
+  const cell = (v: unknown) =>
+    String(v ?? '')
+      .replace(/\|/g, '\\|')
+      .replace(/\n/g, ' ');
+  if (tool === 'browser_fill_form' && Array.isArray(input.fields))
+    return [
+      '| Field | Value |',
+      '|---|---|',
+      ...(input.fields as Record<string, unknown>[]).map((f) => `| ${cell(f.name)} | \`${cell(f.value)}\` |`),
+    ].join('\n');
+  if (tool === 'browser_type') return `Text: \`${cell(input.text)}\`${input.submit ? ' (then submit)' : ''}`;
+  return undefined;
 }
 
 export function genericPreview(input: unknown): string {

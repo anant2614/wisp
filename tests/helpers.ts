@@ -34,7 +34,11 @@ export function testEnv(home: string, extra: Record<string, string> = {}) {
   });
 }
 
-export async function waitFor<T>(fn: () => T | undefined | false | Promise<T | undefined | false>, timeoutMs = 30_000, what = 'condition'): Promise<T> {
+export async function waitFor<T>(
+  fn: () => T | undefined | false | Promise<T | undefined | false>,
+  timeoutMs = 30_000,
+  what = 'condition',
+): Promise<T> {
   const end = Date.now() + timeoutMs;
   let last: unknown;
   while (Date.now() < end) {

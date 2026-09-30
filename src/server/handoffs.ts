@@ -72,9 +72,7 @@ export class HandoffManager {
     this.audit.write(row.convId, 'handoff_' + status, { handoffId: id });
     const w = this.waiters.get(id);
     this.waiters.delete(id);
-    const itemId =
-      w?.itemId ??
-      this.timeline.list(row.convId).find((i) => i.kind === 'handoff' && i.handoffId === id)?.id;
+    const itemId = w?.itemId ?? this.timeline.list(row.convId).find((i) => i.kind === 'handoff' && i.handoffId === id)?.id;
     if (itemId) this.timeline.update(row.convId, itemId, { status } as never);
     w?.resolve(status);
     return true;

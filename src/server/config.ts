@@ -52,7 +52,7 @@ function bool(v: string | undefined, dflt: boolean): boolean {
 
 export function getConfig(): PoppetConfig {
   const e = process.env;
-  const home = path.resolve(e.POPPET_HOME || path.join(process.cwd(), 'workspace'));
+  const home = path.resolve(/*turbopackIgnore: true*/ e.POPPET_HOME || path.join(process.cwd(), 'workspace'));
   return {
     home,
     appUrl: e.POPPET_APP_URL || 'http://localhost:3000',
@@ -88,9 +88,7 @@ export function getConfig(): PoppetConfig {
       image: e.POPPET_SANDBOX_IMAGE || 'node:22-slim',
       timeoutMs: Number(e.POPPET_SANDBOX_TIMEOUT_MS || 60_000),
     },
-    secretsDriver:
-      (e.POPPET_SECRETS as PoppetConfig['secretsDriver']) ||
-      (process.platform === 'darwin' ? 'keychain' : 'file'),
+    secretsDriver: (e.POPPET_SECRETS as PoppetConfig['secretsDriver']) || (process.platform === 'darwin' ? 'keychain' : 'file'),
     approvalTimeoutMs: Number(e.POPPET_APPROVAL_TIMEOUT_MS || 30 * 60_000),
     inboxPollMs: Number(e.POPPET_INBOX_POLL_MS || 5_000),
   };

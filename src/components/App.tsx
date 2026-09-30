@@ -69,9 +69,7 @@ export function App() {
       if (e.type === 'hello') setTurn(e.running ? 'running' : 'idle');
       else if (e.type === 'item') upsert(e.item);
       else if (e.type === 'delta')
-        setItems((prev) =>
-          prev.map((p) => (p.id === e.itemId && p.kind === 'assistant' ? { ...p, text: p.text + e.text } : p)),
-        );
+        setItems((prev) => prev.map((p) => (p.id === e.itemId && p.kind === 'assistant' ? { ...p, text: p.text + e.text } : p)));
       else if (e.type === 'turn') {
         setTurn(e.state);
         if (e.state === 'idle') loadConvs();
@@ -111,6 +109,7 @@ export function App() {
       await post('/api/chat', { convId: id, message: text, model });
       setInput('');
       setTurn('running');
+      loadConvs();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -182,10 +181,7 @@ export function App() {
               {turn !== 'idle' && (
                 <div className="my-2 text-sm text-zinc-500" data-testid="turn-status">
                   {turn === 'retrying' ? 'Retrying…' : 'Working…'}
-                  <button
-                    className="ml-3 underline"
-                    onClick={() => convId && post(`/api/conversations/${convId}/cancel`)}
-                  >
+                  <button className="ml-3 underline" onClick={() => convId && post(`/api/conversations/${convId}/cancel`)}>
                     Stop
                   </button>
                 </div>

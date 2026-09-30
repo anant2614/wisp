@@ -138,7 +138,12 @@ export class DockerSandbox implements Sandbox {
       const idx = r.stdout.lastIndexOf('@@POPPET_RESULT@@');
       const logs = (idx >= 0 ? r.stdout.slice(0, idx) : r.stdout) + r.stderr;
       if (idx < 0)
-        return { ok: false, error: r.timedOut ? 'Timed out' : `Exited with code ${r.code}`, logs: logs.slice(-4000), durationMs: Date.now() - t0 };
+        return {
+          ok: false,
+          error: r.timedOut ? 'Timed out' : `Exited with code ${r.code}`,
+          logs: logs.slice(-4000),
+          durationMs: Date.now() - t0,
+        };
       const parsed = JSON.parse(r.stdout.slice(idx + '@@POPPET_RESULT@@'.length));
       let out = { ...parsed, logs: logs.slice(-4000), durationMs: Date.now() - t0 } as SandboxRunResult;
       // Never echo granted secrets back out of the sandbox.

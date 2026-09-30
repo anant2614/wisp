@@ -66,13 +66,20 @@ export function buildCtx(body: any): ModelCtx {
   let turnStart = 0;
   msgs.forEach((m, idx) => {
     const blocks = typeof m.content === 'string' ? [{ type: 'text', text: m.content }] : (m.content ?? []);
-    if (m.role === 'assistant') for (const b of blocks) if (b.type === 'tool_use') calls.set(b.id, { name: b.name, input: b.input });
+    if (m.role === 'assistant')
+      for (const b of blocks) if (b.type === 'tool_use') calls.set(b.id, { name: b.name, input: b.input });
     if (m.role === 'user') {
       const texts = blocks.filter((b: any) => b.type === 'text').map((b: any) => b.text as string);
       const results = blocks.filter((b: any) => b.type === 'tool_result');
       for (const r of results) {
         const c = calls.get(r.tool_use_id);
-        all.push({ id: r.tool_use_id, name: c?.name ?? '?', input: c?.input, text: textOf(r.content), isError: Boolean(r.is_error) });
+        all.push({
+          id: r.tool_use_id,
+          name: c?.name ?? '?',
+          input: c?.input,
+          text: textOf(r.content),
+          isError: Boolean(r.is_error),
+        });
       }
       // A user message with real text (not only system reminders) starts a new turn.
       const real = texts.filter((t: string) => !/^<system-reminder>[\s\S]*<\/system-reminder>$/.test(t.trim()));
@@ -133,7 +140,12 @@ export class FakeModel {
     if ('text' in step) content.push({ type: 'text', text: step.text });
     else {
       if (step.say) content.push({ type: 'text', text: step.say });
-      content.push({ type: 'tool_use', id: `toolu_${Math.random().toString(36).slice(2, 12)}`, name: step.tool, input: step.input });
+      content.push({
+        type: 'tool_use',
+        id: `toolu_${Math.random().toString(36).slice(2, 12)}`,
+        name: step.tool,
+        input: step.input,
+      });
     }
     const stop = 'tool' in step ? 'tool_use' : 'end_turn';
     const msg = {

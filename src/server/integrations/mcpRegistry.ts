@@ -10,7 +10,12 @@ export interface IntegrationCandidate {
   /** Remote (HTTP) endpoints. */
   remotes: { type: string; url: string; headers?: { name: string; description?: string; isSecret?: boolean }[] }[];
   /** npm packages runnable with npx. */
-  packages: { registryType: string; identifier: string; version?: string; env?: { name: string; description?: string; isSecret?: boolean }[] }[];
+  packages: {
+    registryType: string;
+    identifier: string;
+    version?: string;
+    env?: { name: string; description?: string; isSecret?: boolean }[];
+  }[];
 }
 
 export async function searchIntegrations(query: string, limit = 10): Promise<IntegrationCandidate[]> {
@@ -47,7 +52,9 @@ export async function searchIntegrations(query: string, limit = 10): Promise<Int
 
 /** Look up one registry entry by exact name; installs must reference a registry-listed server. */
 export async function findIntegration(name: string): Promise<IntegrationCandidate | undefined> {
+  const exact = (await searchIntegrations(name, 50)).find((r) => r.name === name);
+  if (exact) return exact;
+  // Some registries only match on the last path segment.
   const short = name.split('/').pop() ?? name;
-  const results = await searchIntegrations(short, 50);
-  return results.find((r) => r.name === name);
+  return (await searchIntegrations(short, 50)).find((r) => r.name === name);
 }

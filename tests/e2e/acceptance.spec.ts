@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -43,6 +44,11 @@ async function approveNext(page: Page, tool?: string) {
   return card;
 }
 
+/** Save a screenshot when E2E_SCREENSHOTS points at a directory (for visual review). */
+async function shot(page: Page, name: string) {
+  if (process.env.E2E_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.E2E_SCREENSHOTS, `${name}.png`) });
+}
+
 const lastAssistant = (page: Page) => page.getByTestId('assistant-message').last();
 
 test.beforeAll(async () => {
@@ -72,11 +78,14 @@ test('T1: summarize unread Gmail from today and flag what needs a reply', async 
   await expect(page.locator('[data-testid="tool-step"][data-tool="mcp__poppet__gmail_read"]')).toHaveCount(3);
   await expect(page.getByTestId('approval-card')).toHaveCount(0); // reading needs no approval
   await expect(page.getByTestId('usage')).toContainText('tokens');
+  await shot(page, 't1-summary');
 });
 
 test('T2: sign up with the agent inbox, hand off the CAPTCHA, confirm the email', async ({ page }) => {
   await newChat(page, 'Sign up for signup.localhost using your email, confirm the verification link, and tell me when done.');
   // Filling a form with email + password fields needs approval; the password is only a placeholder.
+  await expect(page.locator('[data-testid="approval-card"][data-status="pending"]')).toBeVisible();
+  await shot(page, 't2-approval');
   const fill = await approveNext(page, 'mcp__browser__browser_fill_form');
   await expect(fill).toContainText('{{secret:site:signup.localhost}}');
   // Submitting needs approval.
@@ -84,6 +93,7 @@ test('T2: sign up with the agent inbox, hand off the CAPTCHA, confirm the email'
   // Poppet detects the CAPTCHA and hands off to the human.
   const handoff = page.locator('[data-testid="handoff-card"][data-status="open"]');
   await expect(handoff).toContainText('CAPTCHA');
+  await shot(page, 't2-handoff');
   await fetch(`${FIX}/__test/solve-captcha`); // the human solves it in the agent browser
   await handoff.getByTestId('handoff-continue').click();
   await finished(page);
@@ -129,6 +139,7 @@ test('T5: Reddit leads exported to Markdown and a Google Doc; T6: agent proposes
   const card = page.locator('[data-testid="approval-card"][data-status="pending"]');
   await expect(card).toHaveAttribute('data-tool', 'mcp__poppet__registry_propose_skill');
   await expect(card).toContainText('+name: reddit-lead-search');
+  await shot(page, 't6-skill-proposal');
   await approveNext(page);
   await finished(page);
   await expect(lastAssistant(page)).toContainText('invoicely-leads.md');
@@ -140,6 +151,7 @@ test('T5: Reddit leads exported to Markdown and a Google Doc; T6: agent proposes
   const viewer = page.getByTestId('artifact-viewer');
   await expect(viewer.locator('table')).toContainText('agency_owner');
   await expect(viewer.locator('tbody tr').first()).toContainText('85');
+  await shot(page, 't5-artifact-viewer');
   await viewer.getByRole('button', { name: 'Close' }).click();
 
   const exported = fs.readFileSync(path.join(HOME, 'exports', 'invoicely-leads.md'), 'utf8');
@@ -175,6 +187,7 @@ test('T7: install an MCP integration, sign in with OAuth, and complete the task'
 
   const signin = page.locator('[data-testid="signin-card"][data-status="waiting"]');
   await expect(signin).toBeVisible();
+  await shot(page, 't7-signin');
   const [popup] = await Promise.all([context.waitForEvent('page'), signin.getByTestId('signin-link').click()]);
   await expect(popup.getByRole('heading', { name: /Allow Poppet to access your Notion/ })).toBeVisible();
   await popup.getByRole('link', { name: 'Allow access' }).click();
@@ -195,6 +208,7 @@ test('Self-extension: agent writes a tool, tests it in the Docker sandbox, and u
   const card = page.locator('[data-testid="approval-card"][data-status="pending"]');
   await expect(card).toHaveAttribute('data-tool', 'mcp__poppet__registry_propose_tool', { timeout: 120_000 });
   await expect(card).toContainText('Tests: PASSED');
+  await shot(page, 'tool-proposal');
   await expect(card).toContainText('export default async function run');
   await approveNext(page);
   await expect(lastAssistant(page)).toContainText('"words": 4', { timeout: 120_000 });
@@ -239,6 +253,21 @@ test('Settings: audit log, registry controls and memories are visible', async ({
   await expect(page.getByTestId('registry-skill-reddit-lead-search')).toContainText('disabled');
   await page.getByTestId('registry-skill-reddit-lead-search').getByRole('button', { name: 'Enable' }).click();
   await expect(page.getByTestId('registry-skill-reddit-lead-search')).toContainText('active');
+  await shot(page, 'settings');
   const w = await world();
   expect(w.modelErrors).toEqual([]);
+});
+
+test('Safety: requests for a foreign Host are refused (DNS rebinding)', async () => {
+  const status = (host: string) =>
+    new Promise<number>((resolve, reject) =>
+      http
+        .get({ host: '127.0.0.1', port: 3100, path: '/api/conversations', headers: { host } }, (r) => {
+          r.resume();
+          resolve(r.statusCode ?? 0);
+        })
+        .on('error', reject),
+    );
+  expect(await status('attacker.example:3100')).toBe(403);
+  expect(await status('localhost:3100')).toBe(200);
 });

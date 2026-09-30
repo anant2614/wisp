@@ -42,8 +42,7 @@ Expand the product into several buying-intent queries ("looking for …", "alter
 Use memory_search when past preferences or outcomes might matter, and memory_save for durable facts, preferences and task outcomes. Keep answers concise; link sources. Summaries of email should flag which messages need a reply.`,
   ];
 
-  if (p.memories.length)
-    sections.push(`## Relevant memories\n${p.memories.map((m) => `- (#${m.id}) ${m.text}`).join('\n')}`);
+  if (p.memories.length) sections.push(`## Relevant memories\n${p.memories.map((m) => `- (#${m.id}) ${m.text}`).join('\n')}`);
   sections.push(
     `## Active skills\n${p.skills.length ? p.skills.map((s) => `- ${s.name}: ${s.description}`).join('\n') : '(none yet)'}`,
   );

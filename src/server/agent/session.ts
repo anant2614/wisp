@@ -1,12 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  query,
-  type HookCallback,
-  type McpServerConfig,
-  type Options,
-  type SDKMessage,
-} from '@anthropic-ai/claude-agent-sdk';
+import { query, type HookCallback, type McpServerConfig, type Options, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import { getConfig } from '../config';
 import type { Services } from '../services';
 import { buildSystemPrompt } from './prompt';
@@ -156,12 +150,13 @@ export class SessionManager {
     const mcpServers: Record<string, McpServerConfig> = {
       poppet: buildToolServer(defs, toolCtx),
     };
-    if (c.browser.enabled) try {
-      await s.browser.ensureStarted();
-      mcpServers[BROWSER_SERVER] = { type: 'http', url: s.browser.url, alwaysLoad: true };
-    } catch (e) {
-      s.timeline.add(convId, { kind: 'notice', text: `The browser could not start: ${(e as Error).message}` });
-    }
+    if (c.browser.enabled)
+      try {
+        await s.browser.ensureStarted();
+        mcpServers[BROWSER_SERVER] = { type: 'http', url: s.browser.url, alwaysLoad: true };
+      } catch (e) {
+        s.timeline.add(convId, { kind: 'notice', text: `The browser could not start: ${(e as Error).message}` });
+      }
     const integrations = [];
     for (const cfg of await s.registry.activeMcp()) {
       const conn = await s.mcpAuth.connection(cfg);
@@ -174,11 +169,7 @@ export class SessionManager {
           : { type: 'stdio', command: 'npx', args: ['-y', cfg.package!], env: { ...conn.env, PATH: process.env.PATH ?? '' } };
     }
 
-    const [skills, tools, status] = await Promise.all([
-      s.registry.activeSkills(),
-      s.registry.activeTools(),
-      s.google.status(),
-    ]);
+    const [skills, tools, status] = await Promise.all([s.registry.activeSkills(), s.registry.activeTools(), s.google.status()]);
     const systemPrompt = buildSystemPrompt({
       memories: s.memory.search(userText, 5),
       skills,
@@ -229,7 +220,10 @@ export class SessionManager {
       const itemId = run.toolItems.get(id);
       const isError = (response as { isError?: boolean })?.isError === true;
       if (itemId)
-        s.timeline.update(convId, itemId, { status: isError ? 'error' : 'done', output: text.slice(0, 4000) } as Partial<TimelineItem>);
+        s.timeline.update(convId, itemId, {
+          status: isError ? 'error' : 'done',
+          output: text.slice(0, 4000),
+        } as Partial<TimelineItem>);
       s.audit.write(convId, 'tool_result', { toolName: input.tool_name, toolUseId: id, isError, output: text.slice(0, 2000) });
 
       const context: string[] = [];
@@ -401,7 +395,8 @@ export class SessionManager {
         }
       }
     }
-    if (streamItem) s.timeline.update(convId, streamItem.id, { text: streamItem.text, streaming: false } as Partial<TimelineItem>);
+    if (streamItem)
+      s.timeline.update(convId, streamItem.id, { text: streamItem.text, streaming: false } as Partial<TimelineItem>);
   }
 }
 
@@ -480,6 +475,22 @@ export function labelFor(toolName: string, input: Record<string, unknown>): stri
       return `Proposing tool ${String(input.name ?? '')}`;
     case 'registry_install_mcp':
       return `Installing integration ${String(input.registry_name ?? '')}`;
+    case 'leads_save':
+      return `Scoring and saving ${Array.isArray(input.leads) ? input.leads.length : ''} leads`;
+    case 'site_password':
+      return `Preparing sign-up details for ${String(input.domain ?? '')}`;
+    case 'skill_load':
+      return `Loading skill ${String(input.name ?? '')}`;
+    case 'request_handoff':
+      return 'Handing a step over to you';
+    case 'sandbox_test':
+      return 'Testing code in the sandbox';
+    case 'gdocs_share':
+      return `Sharing a doc with ${String(input.email ?? '')}`;
+    case 'grant_secret':
+      return `Granting ${String(input.secret_name ?? '')} to ${String(input.tool ?? '')}`;
+    case 'registry_list':
+      return 'Listing installed abilities';
     case 'registry_search_integrations':
       return `Searching integrations: ${String(input.query ?? '')}`;
     default:

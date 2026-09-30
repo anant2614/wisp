@@ -1,7 +1,8 @@
 'use client';
 import { Marked } from 'marked';
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 // Raw HTML in model output or previews is shown as text, and only safe link schemes render.
 const md = new Marked({
@@ -17,7 +18,9 @@ const md = new Marked({
       return ok ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${inner}</a>` : inner;
     },
     image({ href, text }) {
-      return /^https?:/i.test(href) ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(text || href)}</a>` : esc(text);
+      return /^https?:/i.test(href)
+        ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(text || href)}</a>`
+        : esc(text);
     },
   },
 });

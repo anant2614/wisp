@@ -34,7 +34,11 @@ export class Timeline {
     const row = this.db.select().from(messages).where(eq(messages.id, id)).get();
     if (!row) return undefined;
     const full = { ...JSON.parse(row.contentJson), ...patch } as TimelineItem;
-    this.db.update(messages).set({ contentJson: JSON.stringify(full) }).where(eq(messages.id, id)).run();
+    this.db
+      .update(messages)
+      .set({ contentJson: JSON.stringify(full) })
+      .where(eq(messages.id, id))
+      .run();
     this.bus.emit(convId, { type: 'item', item: full });
     return full;
   }

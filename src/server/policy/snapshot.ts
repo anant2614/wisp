@@ -75,24 +75,29 @@ const SENSITIVE_FIELD =
 const SUBMIT_WORDS =
   /\b(submit|sign ?up|register|create|log ?in|sign ?in|continue|next|confirm|send|post|publish|buy|purchase|pay|order|checkout|check out|subscribe|delete|remove|save|apply|join|verify|agree|place|book|reserve|donate|transfer|upload|finish|complete|get started|start trial|unsubscribe|cancel (my )?(account|subscription))\b/i;
 const SAFE_BUTTON =
-  /^(search|show (more|less|all)|load more|see (more|all)|read more|view( more| all| details)?|more|less|next page|previous( page)?|prev|back|close|dismiss|menu|open menu|expand|collapse|toggle|details|sort( by)?.*|filter.*|(accept|reject|decline)( all)?( cookies)?|got it|ok|okay|no thanks|not now|skip|zoom( in| out)?|play|pause|share options|copy link|page \d+|\d+)$/i;
-const DANGEROUS_LINK = /\b(sign ?out|log ?out|delete|unsubscribe|buy|purchase|pay|checkout|check out|order now|cancel (my )?(account|subscription))\b/i;
+  /^((show|hide) password|search|show (more|less|all)|load more|see (more|all)|read more|view( more| all| details)?|more|less|next page|previous( page)?|prev|back|close|dismiss|menu|open menu|expand|collapse|toggle|details|sort( by)?.*|filter.*|(accept|reject|decline)( all)?( cookies)?|got it|ok|okay|no thanks|not now|skip|zoom( in| out)?|play|pause|share options|copy link|page \d+|\d+)$/i;
+const DANGEROUS_LINK =
+  /\b(sign ?out|log ?out|delete|unsubscribe|buy|purchase|pay|checkout|check out|order now|cancel (my )?(account|subscription))\b/i;
 
 function subtreeFields(n: SnapNode): SnapNode[] {
   return [...walk(n.children)].filter((c) => FIELD_ROLES.has(c.role));
 }
 
-/** The nearest form ancestor, or the smallest ancestor that groups input fields with the target. */
+/**
+ * The nearest form ancestor, or the smallest ancestor that groups input fields
+ * with the target. The page root is never a form group (it contains every
+ * field on the page), and search boxes don't make a group a form.
+ */
 export function formContext(node: SnapNode): SnapNode | undefined {
   let cur = node.parent;
   let hops = 0;
-  while (cur && hops < 5) {
+  while (cur && cur.parent && hops < 5) {
     if (cur.role === 'form') return cur;
-    if (subtreeFields(cur).some((f) => f !== node)) return cur;
+    if (subtreeFields(cur).some((f) => f !== node && f.role !== 'searchbox')) return cur;
     cur = cur.parent;
     hops++;
   }
-  return undefined;
+  return cur?.role === 'form' ? cur : undefined;
 }
 
 function isSensitiveField(n: SnapNode): boolean {
@@ -123,7 +128,8 @@ export function classifyClick(snapshot: string, ref: string): Classification {
   const name = n.name.trim();
   switch (n.role) {
     case 'link':
-      if (DANGEROUS_LINK.test(name)) return { decision: 'ask', reason: `Link "${name}" looks consequential`, target: describe(n) };
+      if (DANGEROUS_LINK.test(name))
+        return { decision: 'ask', reason: `Link "${name}" looks consequential`, target: describe(n) };
       return { decision: 'allow', reason: 'Following a link', target: describe(n) };
     case 'tab':
     case 'menuitem':
@@ -138,12 +144,14 @@ export function classifyClick(snapshot: string, ref: string): Classification {
     case 'checkbox':
     case 'radio':
     case 'switch':
-      if (sensitive) return { decision: 'ask', reason: 'Toggling a control in a form with sensitive fields', target: describe(n) };
+      if (sensitive)
+        return { decision: 'ask', reason: 'Toggling a control in a form with sensitive fields', target: describe(n) };
       return { decision: 'allow', reason: `Toggling a ${n.role}`, target: describe(n) };
     case 'button':
       if (!name) return { decision: 'ask', reason: 'Unnamed button — cannot tell what it does', target: describe(n) };
       if (SAFE_BUTTON.test(name)) return { decision: 'allow', reason: `Non-submitting button "${name}"`, target: describe(n) };
-      if (SUBMIT_WORDS.test(name)) return { decision: 'ask', reason: `Button "${name}" submits or commits an action`, target: describe(n) };
+      if (SUBMIT_WORDS.test(name))
+        return { decision: 'ask', reason: `Button "${name}" submits or commits an action`, target: describe(n) };
       if (form) return { decision: 'ask', reason: `Button "${name}" is inside a form`, target: describe(n) };
       return { decision: 'allow', reason: `Button "${name}" outside any form`, target: describe(n) };
     default:

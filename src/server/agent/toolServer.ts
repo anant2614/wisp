@@ -83,8 +83,6 @@ export function buildToolServer(defs: ToolDef<any>[], ctx: Parameters<ToolDef['h
     version: '1.0.0',
     // Poppet's own tools are always in the prompt, never deferred behind tool search.
     alwaysLoad: true,
-    tools: defs.map((d) =>
-      tool(d.name, d.description, d.schema, async (args) => (await runToolDef(d, args, ctx)) as any),
-    ),
+    tools: defs.map((d) => tool(d.name, d.description, d.schema, async (args) => (await runToolDef(d, args, ctx)) as any)),
   });
 }

@@ -1,0 +1,8 @@
+node_modules
+.next
+workspace
+.e2e-home
+test-results
+package-lock.json
+docs
+tests/fixtures/snapshots

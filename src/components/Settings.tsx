@@ -9,7 +9,15 @@ interface SettingsData {
   reddit: { configured: boolean };
   sandbox: { driver: string; available: boolean };
   model: string;
-  integrations: { name: string; registryName: string; transport: string; url?: string; package?: string; connected: boolean; auth: { type: string } }[];
+  integrations: {
+    name: string;
+    registryName: string;
+    transport: string;
+    url?: string;
+    package?: string;
+    connected: boolean;
+    auth: { type: string };
+  }[];
   usage: { inputTokens: number; outputTokens: number; costUsd: number };
 }
 
@@ -27,7 +35,9 @@ export function Settings() {
   const [s, setS] = useState<SettingsData | null>(null);
   const [reg, setReg] = useState<RegistryData | null>(null);
   const [memories, setMemories] = useState<{ id: number; text: string; tags: string; createdAt: number }[]>([]);
-  const [audit, setAudit] = useState<{ id: number; event: string; convId: string | null; detail: unknown; createdAt: number }[]>([]);
+  const [audit, setAudit] = useState<{ id: number; event: string; convId: string | null; detail: unknown; createdAt: number }[]>(
+    [],
+  );
   const [secretNames, setSecretNames] = useState<string[]>([]);
   const [source, setSource] = useState<Record<string, string> | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -99,13 +109,18 @@ export function Settings() {
             {(['personal', 'agent'] as const).map((a) => (
               <li key={a} className="flex items-center gap-2" data-testid={`account-${a}`}>
                 <span className="w-44">{a === 'personal' ? 'Google (personal)' : 'Google (agent inbox)'}</span>
-                <span className="text-zinc-500">{s.google[a].connected ? (s.google[a].email ?? 'connected') : 'not connected'}</span>
+                <span className="text-zinc-500">
+                  {s.google[a].connected ? (s.google[a].email ?? 'connected') : 'not connected'}
+                </span>
                 <span className="ml-auto flex gap-2">
                   <a className={btn} href={`/api/oauth/google/start?account=${a}`}>
                     {s.google[a].connected ? 'Reconnect' : 'Connect'}
                   </a>
                   {s.google[a].connected && (
-                    <button className={btn} onClick={() => act(() => post('/api/settings', { action: 'disconnect_google', account: a }))}>
+                    <button
+                      className={btn}
+                      onClick={() => act(() => post('/api/settings', { action: 'disconnect_google', account: a }))}
+                    >
                       Disconnect
                     </button>
                   )}
@@ -114,7 +129,9 @@ export function Settings() {
             ))}
             <li className="flex items-center gap-2">
               <span className="w-44">Reddit API</span>
-              <span className="text-zinc-500">{s.reddit.configured ? 'configured (read-only)' : 'not configured — set REDDIT_CLIENT_ID / SECRET'}</span>
+              <span className="text-zinc-500">
+                {s.reddit.configured ? 'configured (read-only)' : 'not configured — set REDDIT_CLIENT_ID / SECRET'}
+              </span>
             </li>
             <li className="flex items-center gap-2">
               <span className="w-44">Sandbox</span>
@@ -122,7 +139,9 @@ export function Settings() {
                 {s.sandbox.driver} · {s.sandbox.available ? 'available' : 'unavailable'}
               </span>
             </li>
-            {!s.googleConfigured && <li className="text-xs text-amber-700">Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to connect Google.</li>}
+            {!s.googleConfigured && (
+              <li className="text-xs text-amber-700">Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to connect Google.</li>
+            )}
             <li className="text-xs text-zinc-500">
               Total usage: {(s.usage.inputTokens + s.usage.outputTokens).toLocaleString()} tokens · ${s.usage.costUsd.toFixed(4)}
             </li>
@@ -133,14 +152,22 @@ export function Settings() {
       <section className={section}>
         <h2 className="mb-2 font-semibold">Installed skills, tools and integrations</h2>
         {kinds.map(([kind, label, active]) => {
-          const names = [...new Set(reg!.items.filter((i) => i.kind === kind && !['rejected', 'deleted', 'pending'].includes(i.status)).map((i) => i.name))];
+          const names = [
+            ...new Set(
+              reg!.items
+                .filter((i) => i.kind === kind && !['rejected', 'deleted', 'pending'].includes(i.status))
+                .map((i) => i.name),
+            ),
+          ];
           return (
             <div key={kind} className="mb-3">
               <h3 className="mb-1 text-xs font-semibold uppercase text-zinc-500">{label}</h3>
               {names.length === 0 && <p className="text-xs text-zinc-500">None yet.</p>}
               <ul className="space-y-1">
                 {names.map((name) => {
-                  const latest = reg!.items.filter((i) => i.kind === kind && i.name === name).sort((a, b) => b.version - a.version)[0];
+                  const latest = reg!.items
+                    .filter((i) => i.kind === kind && i.name === name)
+                    .sort((a, b) => b.version - a.version)[0];
                   const on = active.includes(name);
                   const integ = kind === 'mcp' ? s?.integrations.find((x) => x.name === name) : undefined;
                   return (
@@ -157,7 +184,10 @@ export function Settings() {
                             Sign in
                           </a>
                         )}
-                        <button className={btn} onClick={() => api(`/api/registry?kind=${kind}&name=${name}`).then((r) => setSource(r.source))}>
+                        <button
+                          className={btn}
+                          onClick={() => api(`/api/registry?kind=${kind}&name=${name}`).then((r) => setSource(r.source))}
+                        >
                           Source
                         </button>
                         <button className={btn} onClick={() => registryAction(on ? 'disable' : 'enable', kind, name)}>
@@ -196,7 +226,8 @@ export function Settings() {
             <ul className="mt-1 space-y-0.5 text-xs">
               {reg.history.map((h) => (
                 <li key={h.sha}>
-                  <code>{h.sha.slice(0, 7)}</code> {h.message} <span className="text-zinc-500">{new Date(h.date).toLocaleString()}</span>
+                  <code>{h.sha.slice(0, 7)}</code> {h.message}{' '}
+                  <span className="text-zinc-500">{new Date(h.date).toLocaleString()}</span>
                 </li>
               ))}
             </ul>
@@ -206,12 +237,17 @@ export function Settings() {
 
       <section className={section}>
         <h2 className="mb-2 font-semibold">Secrets for agent-written tools</h2>
-        <p className="mb-2 text-xs text-zinc-500">Stored in the Keychain. A tool only receives a secret after you approve a grant.</p>
+        <p className="mb-2 text-xs text-zinc-500">
+          Stored in the Keychain. A tool only receives a secret after you approve a grant.
+        </p>
         <ul className="mb-2 space-y-1">
           {secretNames.map((n) => (
             <li key={n} className="flex items-center gap-2">
               <code>{n}</code>
-              <button className={btn} onClick={() => act(() => api(`/api/secrets?name=${encodeURIComponent(n)}`, { method: 'DELETE' }))}>
+              <button
+                className={btn}
+                onClick={() => act(() => api(`/api/secrets?name=${encodeURIComponent(n)}`, { method: 'DELETE' }))}
+              >
                 Delete
               </button>
             </li>
@@ -269,7 +305,9 @@ export function Settings() {
                   <td className="whitespace-nowrap py-1 pr-2 text-zinc-500">{new Date(a.createdAt).toLocaleString()}</td>
                   <td className="py-1 pr-2 font-medium">{a.event}</td>
                   <td className="py-1">
-                    <code className="break-all text-[11px] text-zinc-600 dark:text-zinc-400">{JSON.stringify(a.detail).slice(0, 300)}</code>
+                    <code className="break-all text-[11px] text-zinc-600 dark:text-zinc-400">
+                      {JSON.stringify(a.detail).slice(0, 300)}
+                    </code>
                   </td>
                 </tr>
               ))}

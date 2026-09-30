@@ -50,9 +50,7 @@ describe('session manager with the Agent SDK', () => {
       name: 'forbidden',
       match: (c) => /run a shell/i.test(c.prompt),
       next: (c) =>
-        c.results.length === 0
-          ? { tool: 'Bash', input: { command: 'ls /' } }
-          : { text: `Result: ${c.results[0].text}` },
+        c.results.length === 0 ? { tool: 'Bash', input: { command: 'ls /' } } : { text: `Result: ${c.results[0].text}` },
     });
   });
 

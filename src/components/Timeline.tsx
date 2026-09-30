@@ -71,14 +71,19 @@ function ToolStep({ it }: { it: Of<'tool'> }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="text-xs text-zinc-600 dark:text-zinc-400" data-testid="tool-step" data-tool={it.name} data-status={it.status}>
-      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 hover:text-zinc-900 dark:hover:text-zinc-100"
+      >
         <span>{open ? '▾' : '▸'}</span>
         <span>{statusIcon[it.status]}</span>
         <span className="truncate">{it.label}</span>
       </button>
       {open && (
         <div className="ml-5 mt-1 space-y-1">
-          <pre className="max-h-48 overflow-auto rounded bg-zinc-100 p-2 dark:bg-zinc-900">{JSON.stringify(it.input, null, 2)}</pre>
+          <pre className="max-h-48 overflow-auto rounded bg-zinc-100 p-2 dark:bg-zinc-900">
+            {JSON.stringify(it.input, null, 2)}
+          </pre>
           {it.output && (
             <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded bg-zinc-100 p-2 dark:bg-zinc-900">{it.output}</pre>
           )}
@@ -128,7 +133,9 @@ function ApprovalCard({ it }: { it: Of<'approval'> }) {
       <Markdown text={it.previewMd} className="text-sm" />
       <details className="mt-1 text-xs text-zinc-500">
         <summary>Parameters · {it.toolName}</summary>
-        <pre className="mt-1 max-h-60 overflow-auto rounded bg-white/70 p-2 dark:bg-zinc-900">{JSON.stringify(it.input, null, 2)}</pre>
+        <pre className="mt-1 max-h-60 overflow-auto rounded bg-white/70 p-2 dark:bg-zinc-900">
+          {JSON.stringify(it.input, null, 2)}
+        </pre>
       </details>
       {it.status === 'pending' ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -214,7 +221,11 @@ function SigninCard({ it }: { it: Of<'signin'> }) {
     }
   };
   return (
-    <div className="rounded-lg border border-violet-300 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-950/30" data-testid="signin-card" data-status={it.status}>
+    <div
+      className="rounded-lg border border-violet-300 bg-violet-50/60 p-3 dark:border-violet-800 dark:bg-violet-950/30"
+      data-testid="signin-card"
+      data-status={it.status}
+    >
       <div className="mb-1 flex items-center gap-2">
         <span className="text-sm font-semibold">Connect {it.server}</span>
         <Badge status={it.status} />
